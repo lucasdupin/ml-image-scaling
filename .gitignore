@@ -3,3 +3,4 @@ data/
 256_ObjectCategories
 256_ObjectCategories.tar
 .ipynb_checkpoints
+__pycache__
