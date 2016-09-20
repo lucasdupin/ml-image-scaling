@@ -33,8 +33,6 @@ class NotebookLoader(object):
         """import a notebook as a module"""
         path = find_notebook(fullname, self.path)
 
-        print ("importing Jupyter notebook from %s" % path)
-
         # load the notebook object
         with io.open(path, 'r', encoding='utf-8') as f:
             nb = read(f, 4)
@@ -56,14 +54,12 @@ class NotebookLoader(object):
 
         # Export cells
         mod.cells = []
-        print("yo!")
         try:
           for cell in nb.cells:
             if cell.cell_type == 'code':
                 # transform the input to executable Python
                 code = self.shell.input_transformer_manager.transform_cell(cell.source)
                 # Export code
-                print("appending %s" % code)
                 mod.cells.append(code)
                 # run the code in themodule
                 #exec(code, mod.__dict__)
