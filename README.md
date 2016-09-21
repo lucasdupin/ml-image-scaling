@@ -4,4 +4,4 @@ This project uses a neural net to predict what images look like before being dow
 
 Some samples:
 
-![Sample](https://github.com/lucasdupin/enhance/blob/master/sample.png?raw=true)
+<img src="https://github.com/lucasdupin/enhance/blob/master/sample.png?raw=true" width="400">
