@@ -7,11 +7,28 @@ September 21st, 2016
 _(approx. 1-2 pages)_
 
 ### Project Overview
-In this section, look to provide a high-level overview of the project in layman’s terms. Questions to ask yourself when writing this section:
-- _Has an overview of the project been provided, such as the problem domain, project origin, and related datasets or input data?_
-- _Has enough background information been given so that an uninformed reader would understand the problem domain and following problem statement?_
+Image resizing is a problem for everyone who works on the Creative Industry. Often material comes form clients on lower resolutions, and it affects directly the final work. Images end up blurry, and retouching them is a manual and time consuming process.
+
+This project aims at finding alternative methods of scaling images up, using machine learning. 
+
+A regressor was built, using the Caltech-256 database as the training set, capable of resizing images up to 25%. 
+
+One of the main inspirations for this project was [this](http://people.tuebingen.mpg.de/burger/neural_denoising/files/neural_denoising.pdf) paper.
 
 ### Problem Statement
+Given a low resolution image, I want to figure out a way of resizing it that's at least better than *nearest neighbor*, one of the simplest, yet most common ways of rescaling bitmaps.
+
+And *better* is defined by the mean difference between pixel colors on the labels and the final predicted image:
+
+```python
+np.mean(np.abs(predictions - labels))
+```
+
+Using Caltech's image database, a regressor will be trained to be able to predict what a bigger image would look like. This database will be split into 3 sets: Training, testing and validating. This will way we can guarantee that the model is be able to generate predictions
+
+
+In the past, auto-encoders were used to remove noise from images, and a similar architecture seems like a good option to tackle this problem. 
+	
 In this section, you will want to clearly define the problem that you are trying to solve, including the strategy (outline of tasks) you will use to achieve the desired solution. You should also thoroughly discuss what the intended solution will be for this problem. Questions to ask yourself when writing this section:
 - _Is the problem statement clearly defined? Will the reader understand what you are expecting to solve?_
 - _Have you thoroughly discussed how you will attempt to solve the problem?_
