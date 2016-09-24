@@ -63,7 +63,7 @@ It's distributed as a compressed file that can be downloaded from [here](http://
 
 The way the images were categorized is as simple as possible, only splitting them into folders:
 
-<img src="https://github.com/lucasdupin/enhance/blob/master/project_material/caltech_samples/folders.png?raw=true">
+<img src="https://github.com/lucasdupin/enhance/blob/master/project_material/caltech_samples/folders.png?raw=true" height="300">
 
 All files also follow a single nomenclature, that can be represented as:
 
@@ -84,41 +84,133 @@ Also, to simplify computations, all images were converted to grayscale, having o
 
 ### Exploratory Visualization
 
-These are samples of those images:
+Take a look at those images, which were extracted from Caltech-256:
 
-<img src="https://github.com/lucasdupin/enhance/blob/master/project_material/caltech_samples/006_0018.jpg?raw=true">  
-<img src="https://github.com/lucasdupin/enhance/blob/master/project_material/caltech_samples/019_0017.jpg?raw=true">  
-<img src="https://github.com/lucasdupin/enhance/blob/master/project_material/caltech_samples/028_0020.jpg?raw=true">  
-<img src="https://github.com/lucasdupin/enhance/blob/master/project_material/caltech_samples/124_0014.jpg?raw=true">  
+<img src="https://github.com/lucasdupin/enhance/blob/master/project_material/caltech_samples/006_0018.jpg?raw=true" width="500" height="333">  
+<img src="https://github.com/lucasdupin/enhance/blob/master/project_material/caltech_samples/019_0017.jpg?raw=true" width="165" height="253">  
+<img src="https://github.com/lucasdupin/enhance/blob/master/project_material/caltech_samples/028_0020.jpg?raw=true" width="612" heigh="470">  
+<img src="https://github.com/lucasdupin/enhance/blob/master/project_material/caltech_samples/124_0014.jpg?raw=true" width="215" height="142">  
 
-As you can see, the have different dimensions, scale and color depth.
+As you can see, they have different dimensions, scale and color depth. There is some noise around the white part of the glove image and the camel blends with the background, as if image focus were not properly defined.
 
-Preprocessing had to be applied to achieve a normalized dataset. All labels were resized to 150x150 pixels, and the training set to 100x100. This can be written as 33.3% smaller or 50% bigger.
-
-
-In this section, you will need to provide some form of visualization that summarizes or extracts a relevant characteristic or feature about the data. The visualization should adequately support the data being used. Discuss why this visualization was chosen and how it is relevant. Questions to ask yourself when writing this section:
-- _Have you visualized a relevant characteristic or feature about the dataset or input data?_
-- _Is the visualization thoroughly analyzed and discussed?_
-- _If a plot is provided, are the axes, title, and datum clearly defined?_
+Preprocessing had to be applied to achieve a normalized dataset. All labels were resized and cropped to 150x150 pixels, and the training set to 100x100. This can also be interpreted as 33.3% smaller or 50% bigger.
 
 ### Algorithms and Techniques
-In this section, you will need to discuss the algorithms and techniques you intend to use for solving the problem. You should justify the use of each one based on the characteristics of the problem and the problem domain. Questions to ask yourself when writing this section:
-- _Are the algorithms you will use, including any default variables/parameters in the project clearly defined?_
-- _Are the techniques to be used thoroughly discussed and justified?_
-- _Is it made clear how the input data or datasets will be handled by the algorithms and techniques chosen?_
+
+This is a comprehensive list of algorithms tested and used during this experiment:
+
+Network structure:
+
+* Simple *fully connected* network
+* *Multi layer perceptron* network, with 2 hidden layers
+* *Multi layer perceptron* network, with 4 hidden layers
+
+Layers with the following number of parameters:
+
+* 4096
+* 2048
+* 1024
+* 512
+
+3 activation functions were tested:
+
+* Tanh
+* Sigmoid
+* ReLU
+
+2 types of weight initialization:
+
+* Gaussian distribution with various standard deviations
+* Xavier initialization
+
+3 Optimizers:
+
+* Regular Gradient Descent
+* Ada Delta
+* RMS Prop
+
+And the learning rate was also implemented on the following manners:
+
+* Constant
+* With exponential decay
+
+Different image patch sizes:
+
+* in: whole image, out: whole image
+* in: 16x16, out 32x32
+* in: 8x8, out 16x16
+* in: 10x10, out 15x15
+
+#### Best algorithms and parameters
+
+After a week playing with parameters and algorithms, I can say that the group that made more sense is:
+
+* Multi layer perceptron with 2 hidden layers
+	* Less than 2 hidden layers can't generalize the image. You see progress initially while training and then it gets stuck.
+	* More than 2 hidden layers take too long to train and doesn't seem to progress, even after hours running.
+* 2048 parameters for the first hidden layer, and 1024 for the second
+	* More than this slows down the processing tremendously.
+	* Less parameters saturate too fast and replicate the initial image.
+* Tanh
+	* Both sigmoid and ReLu were ignoring part of the color data, probably because the array was normalized to have colors between *-1 and 1*.
+* Xavier initialization
+	* Using only a gaussian distribution makes me have to tweak the standard deviation every time I changed the number of parameters on the network.
+* RMS Prop optimizer
+	* It's momentum keeps us from getting stuck into local optima, which happened constantly on AdaDelta and GradientDescent.
+* Exponential learning rate.
+	* Without it the learning curve gets bumpy, indicating the the model is learning and unlearning every `epoch`.
+* Patch size: 10x10 -> 15x15
+	* Smaller sizes won't have enough data to recreate the bigger version.
+	* Bigger patches require deeper network with way more data than I had available to generate a sharper output.
+	
+To make sure the test results are reliable, three sets were created:
+	* Training: with 75% of the data
+	* Testing: with 12.5% of the data
+	* Validation: with 12.5% of the data
 
 ### Benchmark
-25% vs 50%
-rescaled vs smaller counterpart
-In this section, you will need to provide a clearly defined benchmark result or threshold for comparing across performances obtained by your solution. The reasoning behind the benchmark (in the case where it is not an established result) should be discussed. Questions to ask yourself when writing this section:
-- _Has some result or value been provided that acts as a benchmark for measuring performance?_
-- _Is it clear how this result or value was obtained (whether by data or by hypothesis)?_
+
+The main benchmark used to compare results, is the mean color difference:
+
+```python
+np.mean(np.abs(predictions - labels))
+```
+
+So my minimum required score would be:
+
+```python
+np.mean(np.abs(nn(X) - y))
+```
+
+Where:
+
+* `X`: dataset item
+* `y`: label
+* ``nn``: a function that resizes a label using nearest neighbor algorithm, to match the size of `y`.
+
+And a prediction score would be represented by:
+
+```python
+np.mean(np.abs(prediction - label))
+```
+
+This project is successful as long the the prediction score is higher than *nearest neighbor* score.
 
 
 ## III. Methodology
-_(approx. 3-5 pages)_
 
 ### Data Preprocessing
+
+After decompressing the whole Caltech-256 database, I copied it into 2 folders: `data/X` and `data/y`.
+
+`data/y` contains all images cropped and rescaled to *150x150*. This was done in order to normalize all sizes and aspect ratios. No images were distorted, all extra pixels were discarded.
+
+`data/X` contains a copy of `data/y` where images were downscaled to match *100x100* pixels.
+
+The next step was to load all files into memory, combining R, G and B channels into 1 luminance channel, using [Relative Luminance](https://en.wikipedia.org/wiki/Relative_luminance) algorithm.
+
+
+
 * Caltech256 database
 * Resized images because some of them were blurred
 * Cropped them to normalize their size
