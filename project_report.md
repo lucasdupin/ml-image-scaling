@@ -63,7 +63,7 @@ It's distributed as a compressed file that can be downloaded from [here](http://
 
 The way the images were categorized is as simple as possible, only splitting them into folders:
 
-<img src="https://github.com/lucasdupin/enhance/blob/master/project_material/caltech_samples/folders.png?raw=true" height="300">
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/caltech_samples/folders.png?raw=true" height="300">
 
 All files also follow a single nomenclature, that can be represented as:
 
@@ -86,10 +86,10 @@ Also, to simplify computations, all images were converted to grayscale, having o
 
 Take a look at those images, which were extracted from Caltech-256:
 
-<img src="https://github.com/lucasdupin/enhance/blob/master/project_material/caltech_samples/006_0018.jpg?raw=true" width="500" height="333">  
-<img src="https://github.com/lucasdupin/enhance/blob/master/project_material/caltech_samples/019_0017.jpg?raw=true" width="165" height="253">  
-<img src="https://github.com/lucasdupin/enhance/blob/master/project_material/caltech_samples/028_0020.jpg?raw=true" width="612" heigh="470">  
-<img src="https://github.com/lucasdupin/enhance/blob/master/project_material/caltech_samples/124_0014.jpg?raw=true" width="215" height="142">  
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/caltech_samples/006_0018.jpg?raw=true" width="500" height="333">  
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/caltech_samples/019_0017.jpg?raw=true" width="165" height="253">  
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/caltech_samples/028_0020.jpg?raw=true" width="612" heigh="470">  
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/caltech_samples/124_0014.jpg?raw=true" width="215" height="142">  
 
 As you can see, they have different dimensions, scale and color depth. There is some noise around the white part of the glove image and the camel blends with the background, as if image focus were not properly defined.
 
@@ -141,6 +141,12 @@ Different image patch sizes:
 * in: 8x8, out 16x16
 * in: 10x10, out 15x15
 
+Dropout:
+
+* Dropout: keep_prob = 0.5
+* Dropout: keep_prob = 0.9
+* No dropout
+
 #### Best algorithms and parameters
 
 After a week playing with parameters and algorithms, I can say that the group that made more sense is:
@@ -162,6 +168,7 @@ After a week playing with parameters and algorithms, I can say that the group th
 * Patch size: 10x10 -> 15x15
 	* Smaller sizes won't have enough data to recreate the bigger version.
 	* Bigger patches require deeper network with way more data than I had available to generate a sharper output.
+* Dropout removes information randomly from the image, and since my dataset never overfits and I'm trying to recover edges, wasn't a good addition to the net.
 	
 To make sure the test results are reliable, three sets were created:
 	* Training: with 75% of the data
@@ -209,46 +216,71 @@ After decompressing the whole Caltech-256 database, I copied it into 2 folders: 
 
 The next step was to load all files into memory, combining R, G and B channels into 1 luminance channel, using [Relative Luminance](https://en.wikipedia.org/wiki/Relative_luminance) algorithm.
 
+Finally, the pixel values were normalized to range between -1 and 1, where -1 represent black and 1 is absolute white.
 
+#### Data statistics after preprocessing:
 
-* Caltech256 database
-* Resized images because some of them were blurred
-* Cropped them to normalize their size
-* Created smaller versions, downscaling images by 50%: having 1/4th of the pixels. Also tried 33% but the net had about the same final score 
-* Normalized data, to have them go from -1 to 1, having a mean close to 0
-* Created train, test and validation datasets, composed of 15k, 2.5k and 2.5k images respectively
+##### Shape:
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/preprocessing/shape.png?raw=true" width="400">  
 
-In this section, all of your preprocessing steps will need to be clearly documented, if any were necessary. From the previous section, any of the abnormalities or characteristics that you identified about the dataset will be addressed and corrected here. Questions to ask yourself when writing this section:
-- _If the algorithms chosen require preprocessing steps like feature selection or feature transformations, have they been properly documented?_
-- _Based on the **Data Exploration** section, if there were abnormalities or characteristics that needed to be addressed, have they been properly corrected?_
-- _If no preprocessing is needed, has it been made clear why?_
+##### Mean, std deviation:
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/preprocessing/stats.png?raw=true" width="320">  
 
-### Implementation
-* Loss function is R2
-* Metrics for comparing images: like r2, but without squaring it, only the plain difference between images
-* RMSProp optimizer
-* Structure similar to an auto-encoder
-* Activations is a tanh, like a sigmoid, but going from -1 t 1, like the data
-* Small 10x10 patches outputs 20x20 images
+##### Standard deviation:
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/preprocessing/std_dev1.png?raw=true" height="250">
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/preprocessing/std_dev2.png?raw=true" height="250">  
 
-In this section, the process for which metrics, algorithms, and techniques that you implemented for the given data will need to be clearly documented. It should be abundantly clear how the implementation was carried out, and discussion should be made regarding any complications that occurred during this process. Questions to ask yourself when writing this section:
-- _Is it made clear how the algorithms and techniques were implemented with the given datasets or input data?_
-- _Were there any complications with the original metrics or techniques that required changing prior to acquiring a solution?_
-- _Was there any part of the coding process (e.g., writing complicated functions) that should be documented?_
+#### Data sample after preprocessing:
 
-### Refinement
-* Xavier initialization
-* Patch size: big patches are blurrier, small have recomposition problems
-* Learning rate: bumpy chart, unlearns
-* Number of hidden layers: more than 3 makes it harder to learn
-* Number of features: 512 won't do a good job, more than 2048 won't make a difference and slows it down - at least on my setup
-* Optimizers: regular gradient descent seems to get stuck
+**X** on the top, **y** on the bottom.  
 
-In this section, you will need to discuss the process of improvement you made upon the algorithms and techniques you used in your implementation. For example, adjusting parameters for certain models to acquire improved solutions would fall under the refinement category. Your initial and final solutions should be reported, as well as any significant intermediate results as necessary. Questions to ask yourself when writing this section:
-- _Has an initial solution been found and clearly reported?_
-- _Is the process of improvement clearly documented, such as what techniques were used?_
-- _Are intermediate and final solutions clearly reported as the process is improved?_
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/preprocessing/2.png?raw=true" height="300">
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/preprocessing/3.png?raw=true" height="300">
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/preprocessing/4.png?raw=true" height="300">
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/preprocessing/5.png?raw=true" height="300">
 
+### Implementation and Refinement
+
+The first step of implementing this neural net was searching for references regarding similar work, and I landed on these 3 papers: [1](http://people.tuebingen.mpg.de/burger/neural_denoising/files/neural_denoising.pdf), [2](https://papers.nips.cc/paper/4686-image-denoising-and-inpainting-with-deep-neural-networks.pdf) and [3](http://www.sersc.org/journals/IJSIP/vol7_no3/14.pdf).
+
+My first attempt was to create a single fully-connected network, and feed whole images in. Obviously it was simplistic approach so I moved on to a deeper architecture, still receiving a whole image.
+
+After that, I moved away from a `GradientDescentOptimizer` in favor of a `RMSPropOptimizer` but that was still giving me blurry images. With better results though.
+
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/blurry_images.png?raw=true" height="300">  
+
+Next step was to try to add `dropout`, but unless I used a really high `keep_prob`, higher than *0.9*, all I could get was a blur:
+
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/with_dropout.png?raw=true" height="300">  
+
+Trying `tanh` improved drastically my results, but as you can see it was still far from ideal. The learning rate was too high - and that's the reason why the chart is so bumpy - and weight initialization was off:
+
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/with_tanh.png?raw=true" height="500">  
+
+Adjusting the learning rate and weight initialization I was able to improve some results. But I didn't had moved on to *Xavier initialization* yet, I was still using a gaussian distribution, with TensorFlow's `truncated_normal`:
+
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/tanh_tunning.png?raw=true" height="200">  
+
+Moving on to deeper networks, they proved much harder to train, specially when paired with Stochastic Gradient Descent. This image shows a network on low training *epochs* but should be already enough to see at least shape of objects:
+
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/deeper_net.png?raw=true" height="200">  
+
+This is where things started to get interesting. The correct weight initialization made a whole difference on the results achieved. This is what it looks like to use `Xavier` instead of a regular fixed standard deviation:
+
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/xavier.png?raw=true" height="200">  
+
+The next steps were to start fine tuning parameters, and this is what took longer.  
+I tried things like upscaling images using *nearest neighbor* and *bicubic interpolation* before sending them into the deep net, with interesting results I'll discuss later. I also tried the values described on the **Best algorithms and parameters** section.
+
+After reaching the final model, it's stunning to see what kind of prediction it can make, specially when dealing with text, as you can observe the reconstruction of the number **5** on this image:
+
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/tuning2.png?raw=true" height="200">  
+
+Or this **B**:
+
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/sample_1.png?raw=true" height="200">  
+
+The final implementation code with prediction samples can be seen [here](https://github.com/lucasdupin/ml-image-scaling/blob/master/2_autoencoder.ipynb).
 
 ## IV. Results
 _(approx. 2-3 pages)_
@@ -284,10 +316,11 @@ In this section, you will summarize the entire end-to-end problem solution and d
 - _Does the final model and solution fit your expectations for the problem, and should it be used in a general setting to solve these types of problems?_
 
 ### Improvement
-In this section, you will need to provide discussion as to how one aspect of the implementation you designed could be improved. As an example, consider ways your implementation can be made more general, and what would need to be modified. You do not need to make this improvement, but the potential solutions resulting from these changes are considered and compared/contrasted to your current solution. Questions to ask yourself when writing this section:
-- _Are there further improvements that could be made on the algorithms or techniques you used in this project?_
-- _Were there algorithms or techniques you researched that you did not know how to implement, but would consider using if you knew how?_
-- _If you used your final solution as the new benchmark, do you think an even better solution exists?_
+Fliboard [posted on their blog](http://engineering.flipboard.com/2015/05/scaling-convnets/) a similar experiment where they use Convnets instead of auto-encoders to do this kind image processing.  
+Despite using images of way better quality and a dataset that's 200 times bigger than Caltech-256 -- with a total of 3 million images --, they introduced 2 convolution layers on the entry point of their DNN.  
+This technique improves edge and feature detection and is something I definitely want to try as soon as I have some spare time.
+
+Another strategy to optimize this net could be to export overlapping patches and recompose them using a gaussian/normal distribution, this would avoid some noticeable seams on the current results.
 
 -----------
 
