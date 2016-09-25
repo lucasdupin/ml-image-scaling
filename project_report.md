@@ -15,7 +15,7 @@ A regressor was built, using the Caltech-256 database as the training set, capab
 One of the main inspirations for this project was [this](http://people.tuebingen.mpg.de/burger/neural_denoising/files/neural_denoising.pdf) paper.
 
 ### Problem Statement
-Given a low resolution image, I want to figure out a way of resizing it that's at least better than *nearest neighbor*, one of the simplest, yet most common ways of rescaling bitmaps.
+Given a low resolution image, I want to figure out a way of resizing it that's better than *nearest neighbor*, one of the simplest, yet most common ways of rescaling bitmaps.
 
 And *better* is defined by comparing the mean difference between pixel colors on the labels and the final predicted image.
 
@@ -283,24 +283,79 @@ Or this **B**:
 The final implementation code with prediction samples can be seen [here](https://github.com/lucasdupin/ml-image-scaling/blob/master/2_autoencoder.ipynb).
 
 ## IV. Results
-_(approx. 2-3 pages)_
 
-### Model Evaluation and Validation
-In this section, the final model and any supporting qualities should be evaluated in detail. It should be clear how the final model was derived and why this model was chosen. In addition, some type of analysis should be used to validate the robustness of this model and its solution, such as manipulating the input data or environment to see how the model’s solution is affected (this is called sensitivity analysis). Questions to ask yourself when writing this section:
-- _Is the final model reasonable and aligning with solution expectations? Are the final parameters of the model appropriate?_
-- _Has the final model been tested with various inputs to evaluate whether the model generalizes well to unseen data?_
-- _Is the model robust enough for the problem? Do small perturbations (changes) in training data or the input space greatly affect the results?_
-- _Can results found from the model be trusted?_
+Evaluation of the score function:
 
-### Justification
-In this section, your model’s final solution and its results should be compared to the benchmark you established earlier in the project using some type of statistical analysis. You should also justify whether these results and the solution are significant enough to have solved the problem posed in the project. Questions to ask yourself when writing this section:
-- _Are the final results found stronger than the benchmark result reported earlier?_
-- _Have you thoroughly analyzed and discussed the final solution?_
-- _Is the final solution significant enough to have solved the problem?_
+```
+when images are the same: 0.000000  
+when images are completely different: 1.000000
+```
 
+Results achieved with the final model on the datasets:
+
+```
+Test r2: 0.064
+Validation r2: 0.063
+```
+
+It's accurate to say that the final model could generate images that are 6% distant from the original label on average.
+
+It's also accurate to say that this model is robust enough to deal with unseen data, since we splitted the original dataset into 3. This guarantees that even if the validation set leaks into the model, the test set won't.
+
+Since this model works on small patches, a final image has to be recomposed after going through the neural net. This was achieved simply by concatenating them, in a new `numpy` array. Implementation code can be found [here](https://github.com/lucasdupin/ml-image-scaling/blob/master/3_results.ipynb).
+
+These are predictions of the final model:
+
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/final_predictions.png?raw=true" height="400">  
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/final_predictions2.png?raw=true" height="400">
+
+It's easy to note how close the **labels** row is from the **predicted**.
+
+And this is a score comparison after reconstruction:
+
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/final_recomposition.png?raw=true" height="1000">
+
+Comparing the *nearest neighbor* score: 0.12 with our model: 0.092 we can say there's a ~30% gain on this result.
+
+```
+0.12/0.092 = 1.3043...
+```
+
+I encourage you to load the [results notebook](https://github.com/lucasdupin/ml-image-scaling/blob/master/3_results.ipynb) and try it too, cases where a *nearest neighbor* beats this *model* are extremely rare.
+
+### Extra, intriguing results
+
+As part of tweaking and tuning parameters, one of the things tried was to upscale images, using *bicubic interpolation* before feeding them into the network.  
+This results in a regular autoencoder, where the number of inputs on the network is the same as the number of output parameters.
+
+Even though it defeats the purpose or creating a network that rescales images, interesting behaviors could be observed.
+
+The average difference between images was lower, having final score of `0.04`, but even with a better score, the difference from the dataset and its labels couldn't be beaten.
+
+But the most intricate part is that noise was removed without generating an image that's blurrier than the input. Take a look at this sample and compare the white parts. Notice how it's way less noisier:
+
+<table>
+<tr>
+	<td>Data upscaled</td>
+	<td>Prediction</td>
+	<td>Original</td>
+</tr>
+<tr>
+<td>
+	<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/pre_scale_bicubic.png?raw=true" height="300">
+</td><td>
+	<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/pre_scale_model.png?raw=true" height="300">
+</td><td>
+	<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/pre_scale_original.png?raw=true" height="300">
+</td>
+</tr>
+</table>
+
+This means that alternate forms of this model can be used as an image pass, to clean up images, potentially using a mask, like a Photoshop tool.
+
+More details and implementation can be found [here](https://github.com/lucasdupin/ml-image-scaling/blob/feature/pre_rescale/3_results.ipynb).
 
 ## V. Conclusion
-_(approx. 1-2 pages)_
 
 ### Free-Form Visualization
 In this section, you will need to provide some form of visualization that emphasizes an important quality about the project. It is much more free-form, but should reasonably support a significant result or characteristic about the problem that you want to discuss. Questions to ask yourself when writing this section:
@@ -316,20 +371,9 @@ In this section, you will summarize the entire end-to-end problem solution and d
 - _Does the final model and solution fit your expectations for the problem, and should it be used in a general setting to solve these types of problems?_
 
 ### Improvement
+
 Fliboard [posted on their blog](http://engineering.flipboard.com/2015/05/scaling-convnets/) a similar experiment where they use Convnets instead of auto-encoders to do this kind image processing.  
 Despite using images of way better quality and a dataset that's 200 times bigger than Caltech-256 -- with a total of 3 million images --, they introduced 2 convolution layers on the entry point of their DNN.  
 This technique improves edge and feature detection and is something I definitely want to try as soon as I have some spare time.
 
-Another strategy to optimize this net could be to export overlapping patches and recompose them using a gaussian/normal distribution, this would avoid some noticeable seams on the current results.
-
------------
-
-**Before submitting, ask yourself. . .**
-
-- Does the project report you’ve written follow a well-organized structure similar to that of the project template?
-- Is each section (particularly **Analysis** and **Methodology**) written in a clear, concise and specific fashion? Are there any ambiguous terms or phrases that need clarification?
-- Would the intended audience of your project be able to understand your analysis, methods, and results?
-- Have you properly proof-read your project report to assure there are minimal grammatical and spelling mistakes?
-- Are all the resources used for this project correctly cited and referenced?
-- Is the code that implements your solution easily readable and properly commented?
-- Does the code execute without error and produce results similar to those reported?
+Another strategy to optimize results could be to export overlapping patches and recompose them using a gaussian/normal distribution, this would avoid some noticeable seams on the current predictions.
