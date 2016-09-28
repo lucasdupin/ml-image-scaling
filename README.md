@@ -304,6 +304,89 @@ Or this **B**:
 
 The final implementation code with prediction samples can be seen [here](https://github.com/lucasdupin/ml-image-scaling/blob/master/2_autoencoder.ipynb).
 
+### Coding
+
+Python is a pretty straightforward and semantic language, with strong package managing support. And Jupyter notebooks are a great way of explaining your thoughts, experimenting and iterating through code. On top of that a deep learning library is needed, and my initial choices were:
+
+* Caffe
+* Theano
+* TensorFlow
+
+In the end I chose TensorFlow due to its speed, flexibility and great documentation.
+
+Also, bits of `numpy` and `sklearn` were used to preprocess, reshape and split arrays. `numpy` has great performance and simple syntax to manipulate data.
+
+Coding a TensorFlow graph is a simple process, you need to define it using a snippet like this:
+
+```python
+
+graph = tf.Graph()
+with graph.as_default():
+
+    # input variables
+    tf_X = tf.placeholder(tf.float32, shape=(batch_size, n_input))
+    ...
+
+    # weights / slopes
+    W = {
+        'encoder_h1': tf.Variable(tf.truncated_normal([n_input, n_hidden_1], stddev=std_dev_1)),
+        ...
+    }
+    # biases / intercepts
+    b = {
+        'encoder_b1': tf.Variable(tf.truncated_normal([n_hidden_1], stddev=std_dev_1)),
+        ...
+    }
+    
+    # Execute sequence of encoding, decoding to
+    # generate predictions
+    layer_1 = activate(tf.add(tf.matmul(x, W['encoder_h1']), b['encoder_b1']))
+    ...
+    y_pred = activate(tf.add(tf.matmul(layer_1, W['decoder_h2']), b['decoder_b2']))
+    
+    # Our goal is to reduce the mean between the originals and the predictions.
+    # This value is squared to be more aggressive with distant values
+    loss = tf.reduce_mean(tf.pow(tf_y - y_pred, 2))
+    
+    # Define optimizer
+    optimizer =  tf.train.RMSPropOptimizer(0.01).minimize(loss)
+
+```
+
+And let it run:
+
+```python
+
+with tf.Session(graph=graph) as session:
+    
+    print('Initialized')
+    for step in range(30000):
+        print(".", end="")
+        
+        batch_data, batch_labels = get_patches(X_train, y_train, batch_start)
+            
+        # Data passed into the session
+        feed_dict = {
+            tf_X : batch_data, 
+            tf_y : batch_labels,
+            global_step: step
+        }
+        
+        # Run session
+        _, l = session.run([optimizer, loss], feed_dict=feed_dict)
+
+```
+
+*Final implementation [here](https://github.com/lucasdupin/ml-image-scaling/blob/master/2_autoencoder.ipynb).*
+
+It's a good idea to have the graph definition and session code on different Jupyter cells, to make the code simpler to understand and easier to tweak.
+
+Also, always start simple and build on top of it. Having too many features while you start to build your algorithm will make you lost, without knowing what has good or poor performance. I had to take a couple steps back, removing early complexity, to make sure I was understanding the performance drawbacks and limits of each piece of code.
+
+I would say that the most traumatic part of the coding process was to define all variables/matrices with their correct sizes. Changing the size of a layer requires manual changes on the several parts of the code. Probably a library like [TFLearn](http://tflearn.org/) could make this easier but I was afraid of loosing flexibility. 
+
+Apart from that, coding was smooth, and the only challenges were to figure out the best parameter/algorithm combinations. GridSearch could be a great way of pushing this even further.
+
 ## IV. Results
 
 Let's start by evaluating the score function. Its results vary from 0 to 1. Where 1 represents images that are completely different and 0 perfect regression.
