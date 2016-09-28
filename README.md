@@ -102,8 +102,15 @@ This is a comprehensive list of algorithms tested and used during this experimen
 Network structure:
 
 * Simple *fully connected* network
+	* On a *fully connected* layer each perceptron on the current layer is connected to all perceptrons on the previous layer.
 * *Multi layer perceptron* network, with 2 hidden layers
+	* A *Multi layer perceptron* represents the core of deep learning, it's a network architecture with one or more hidden layers.
+	* A hidden layer is a group of perceptrons whose both inputs and outputs do not touch the network input and output spaces.
 * *Multi layer perceptron* network, with 4 hidden layers
+
+Example of neural net structure:
+
+<img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/neural_net.gif?raw=true" width="200">
 
 Layers with the following number of parameters:
 
@@ -114,25 +121,39 @@ Layers with the following number of parameters:
 
 3 activation functions were tested:
 
-* Tanh
 * Sigmoid
+	* A function that stretches intermediate values, reducing entropy
+	* <img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/functions/sigmoid.png?raw=true" width="200">
+* Tanh
+	* A special version of a sigmoid that goes from -1 to 1
+	* <img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/functions/tanh.gif?raw=true" width="200">
 * ReLU
+	* All results < 0 are set to 0, otherwise they can grow linearly until infinity
+	* <img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/functions/relu.png?raw=true" width="200">
 
 2 types of weight initialization:
 
 * Gaussian distribution with various standard deviations
+	* A Gaussian distribution represents how data is usually present on the real world, this makes it more powerful than a simple random initialization
+	* <img src="https://github.com/lucasdupin/ml-image-scaling/blob/master/project_material/functions/gaussian.png?raw=true" width="200">
 * Xavier initialization
+	* Is a special case of a Gaussian distribution, where the standard deviation is set to: `math.sqrt(6) / (math.sqrt(inputs_number) + math.sqrt(outputs_number))`
 
 3 Optimizers:
 
 * Regular Gradient Descent
+	* An iterative algorithm where a gradient is calculated and optimized according to execution steps.
+	* <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Gradient_descent.svg/350px-Gradient_descent.svg.png" width="200">
 * Ada Delta
+	* Ada Delta adds momentum to GD, but keeping track of previous `n` gradients and taking them into account while doing back propagation.
 * RMS Prop
+	* Similar to Ada Delta. Both algorithms aim at solving Adagrad's aggressive momentum, with <a href="http://sebastianruder.com/optimizing-gradient-descent/index.html#rmsprop" target="_blank">minor differences on their equations</a>.
 
 And the learning rate was also implemented on the following manners:
 
 * Constant
 * With exponential decay
+	* Where the learning curve decreases exponentially after `n` epochs.
 
 Different image patch sizes:
 
@@ -142,6 +163,7 @@ Different image patch sizes:
 * in: 10x10, out 15x15
 
 Dropout:
+Dropout works but ignoring and averaging part of the layer net input, this way the perceptrons have no option but to generalize the data, since inputs vary constantly.
 
 * Dropout: keep_prob = 0.5
 * Dropout: keep_prob = 0.9
